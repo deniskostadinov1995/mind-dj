@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>mind-dj</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#13171c; --panel2:#181d24; --line:#232a33;
+  --text:#e8ecf1; --dim:#8b98a8; --faint:#5d6875;
+  --accent:#5eead4; --accent2:#a78bfa; --warn:#f87171; --good:#4ade80;
+  --radius:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* An explicit display value beats the hidden attribute, so restore it. */
+[hidden]{display:none !important}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+body{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  margin:0 0 14px;font-weight:600}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center}
+.grow{flex:1;min-width:0}
+.muted{color:var(--dim)}
+.tiny{font-size:12px}
+
+/* now playing */
+.np{display:flex;gap:14px;align-items:flex-start}
+.art{width:88px;height:88px;border-radius:12px;object-fit:cover;background:var(--panel2);
+  flex:none;border:1px solid var(--line)}
+.title{font-size:19px;font-weight:650;line-height:1.25;margin:0 0 3px;
+  overflow-wrap:anywhere}
+.artist{color:var(--dim);margin:0 0 8px;overflow-wrap:anywhere}
+.why{display:inline-block;font-size:12.5px;color:var(--accent);
+  background:rgba(94,234,212,.09);border:1px solid rgba(94,234,212,.22);
+  padding:4px 9px;border-radius:999px}
+.bar{height:4px;background:var(--panel2);border-radius:999px;overflow:hidden;margin:14px 0 6px}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  width:0;transition:width .9s linear}
+.times{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);
+  font-variant-numeric:tabular-nums}
+
+/* buttons */
+button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);
+  border-radius:11px;padding:10px 14px;cursor:pointer;transition:.12s}
+button:hover{border-color:#33404f;background:#1d232b}
+button:active{transform:scale(.97)}
+button.primary{background:var(--accent);color:#04201c;border-color:transparent;font-weight:650}
+button.primary:hover{background:#7df0dc}
+button.on{border-color:var(--accent);color:var(--accent)}
+button.danger:hover{border-color:var(--warn);color:var(--warn)}
+button.good:hover{border-color:var(--good);color:var(--good)}
+.controls{display:flex;gap:8px;margin-top:14px}
+.controls button{flex:1;min-width:0;justify-content:center;padding:10px 8px}
+/* Transport on top, judgement underneath. Splitting these deliberately reads
+   better than letting five buttons wrap 4+1 at phone width. */
+.controls + .controls{margin-top:8px}
+
+/* chips */
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{font-size:12.5px;padding:6px 11px;border-radius:999px;background:var(--panel2);
+  border:1px solid var(--line);color:var(--dim);cursor:pointer;transition:.12s}
+.chip:hover{color:var(--text);border-color:#33404f}
+.chip.on{background:rgba(167,139,250,.13);border-color:var(--accent2);color:#c4b5fd}
+.chip.off{opacity:.35;cursor:not-allowed}
+
+/* moment */
+.moment{font-size:13.5px;color:var(--dim);margin-bottom:10px}
+.moment b{color:var(--text);font-weight:600}
+
+/* queue */
+.q{display:flex;gap:11px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.q:first-child{border-top:0}
+.q img{width:38px;height:38px;border-radius:8px;object-fit:cover;flex:none;background:var(--panel2)}
+.q .t{font-size:13.5px;line-height:1.3}
+.q .a{font-size:11.5px;color:var(--faint)}
+.new{font-size:10px;color:var(--accent2);border:1px solid rgba(167,139,250,.35);
+  padding:1px 6px;border-radius:999px;flex:none}
+
+input[type=text]{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);
+  color:var(--text);border-radius:11px;padding:11px 13px;font:inherit;outline:none}
+input[type=text]:focus{border-color:var(--accent2)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+
+.err{color:var(--warn);font-size:12.5px;margin-top:8px;min-height:16px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex:none}
+.dot.live{background:var(--good);box-shadow:0 0 8px rgba(74,222,128,.55)}
+details summary{cursor:pointer;color:var(--dim);font-size:13px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary:before{content:"▸ ";color:var(--faint)}
+details[open] summary:before{content:"▾ "}
+.kv{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--dim)}
+.kv b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<h1>mind-dj</h1>
+
+<div class="card">
+  <div class="np">
+    <img id="art" class="art" alt="">
+    <div class="grow">
+      <p class="title" id="title">nothing playing</p>
+      <p class="artist" id="artist">press play and it will read the room</p>
+      <span class="why" id="why" hidden></span>
+    </div>
+  </div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="times"><span id="tpos">0:00</span><span id="tdur">0:00</span></div>
+  <div class="controls">
+    <button id="btnPlay" class="primary">Play</button>
+    <button id="btnNext" title="Move on. Counts against this song.">Skip</button>
+    <button id="btnLater" title="Good song, wrong moment. Teaches nothing against it.">Not now</button>
+  </div>
+  <div class="controls">
+    <button id="btnLove" class="good" title="More like this, at moments like this">Love</button>
+    <button id="btnDown" class="danger" title="I do not like this song">Nope</button>
+    <button id="btnBan" class="danger" title="Never play this again">Never</button>
+  </div>
+  <div class="err" id="err"></div>
+</div>
+
+<div class="card">
+  <div class="row" style="margin-bottom:10px">
+    <span class="dot" id="live"></span>
+    <div class="moment grow" id="moment" style="margin:0"></div>
+  </div>
+  <div class="chips" id="modes"></div>
+</div>
+
+<div class="card">
+  <div class="row">
+    <input type="text" id="ask" placeholder="try &ldquo;chalga 2000-2010&rdquo; or &ldquo;something calm&rdquo;">
+    <button id="btnAsk">Ask</button>
+  </div>
+  <div id="focusRow" class="row" style="margin-top:9px" hidden>
+    <span class="chip on grow" id="focusChip"></span>
+    <button id="btnClearFocus" style="padding:5px 11px;font-size:12px">Clear</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:9px">
+    <span class="tiny muted">Play it on &mdash; tap to add or remove</span>
+    <button id="btnAll" style="padding:5px 11px;font-size:12px">Everywhere</button>
+  </div>
+  <div class="chips" id="sinks"></div>
+  <div id="sync" class="tiny" style="margin-top:9px"></div>
+  <div style="margin-top:14px">
+    <div class="row tiny muted" style="justify-content:space-between;margin-bottom:5px">
+      <span>Adventurousness</span><span id="biasVal">normal</span>
+    </div>
+    <input type="range" id="bias" min="0" max="3" step="0.25" value="1">
+  </div>
+  <div style="margin-top:12px">
+    <div class="row tiny muted" style="justify-content:space-between;margin-bottom:5px">
+      <span>Volume</span><span id="volVal">80</span>
+    </div>
+    <input type="range" id="vol" min="0" max="100" step="1" value="80">
+  </div>
+</div>
+
+<div class="card">
+  <div class="tiny muted" style="margin-bottom:6px">Coming up</div>
+  <div id="queue"></div>
+</div>
+
+<div class="card" id="remoteCard" hidden>
+  <div class="tiny muted" style="margin-bottom:7px">Away from home, open this</div>
+  <div class="row">
+    <input type="text" id="remoteUrl" readonly>
+    <button id="btnCopy">Copy</button>
+  </div>
+  <div class="tiny" id="remoteNote" style="margin-top:7px;color:var(--faint)"></div>
+</div>
+
+<div class="card">
+  <details>
+    <summary>What it has learned</summary>
+    <div id="insights" style="margin-top:11px"></div>
+  </details>
+</div>
+
+<audio id="audio" hidden></audio>
+
+<script>
+const $ = s => document.querySelector(s);
+let state = null, lastVid = null, webSink = false;
+
+const fmt = s => {
+  s = Math.max(0, Math.floor(s || 0));
+  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+};
+
+async function api(path, body) {
+  const opt = body ? {method: "POST", headers: {"Content-Type": "application/json"},
+                      body: JSON.stringify(body)} : {};
+  const r = await fetch(path, opt);
+  return r.json();
+}
+
+function render(s) {
+  state = s;
+  const c = s.current;
+  $("#live").className = "dot" + (s.moment.ha ? " live" : "");
+  $("#title").textContent = c ? c.title : "nothing playing";
+  $("#artist").textContent = c ? (c.artist || "") : "press play and it will read the room";
+  $("#art").src = c && c.thumbnail ? c.thumbnail : "";
+  $("#art").style.visibility = c && c.thumbnail ? "visible" : "hidden";
+
+  const why = c ? (c.reason || s.reason) : "";
+  $("#why").hidden = !why;
+  $("#why").textContent = why || "";
+
+  const dur = c ? (c.duration_sec || 0) : 0;
+  $("#prog").style.width = dur ? Math.min(100, (s.position / dur) * 100) + "%" : "0";
+  $("#tpos").textContent = fmt(s.position);
+  $("#tdur").textContent = fmt(dur);
+  $("#btnPlay").textContent = s.playing && !s.paused ? "Pause" : "Play";
+
+  // what it is locked onto, if anything
+  const f = s.focus;
+  $("#focusRow").hidden = !f;
+  if (f) {
+    $("#focusChip").innerHTML =
+      `sticking to <b>${esc(f.label)}</b> &middot; ${f.pool} tracks &middot; ${f.minutes_left}m left`;
+  }
+
+  const m = s.moment;
+  $("#moment").innerHTML = "It thinks: <b>" + (m.name || m.activity || "…") + "</b> — "
+    + (m.text || "") + (m.override ? " <b>(you set this)</b>" : "");
+
+  // modes
+  const modes = ["auto", "focus", "wind_down", "active", "party", "workout", "sleep"];
+  $("#modes").innerHTML = modes.map(x => {
+    const on = (x === "auto" && !m.override) || (m.override && m.activity === x);
+    return `<span class="chip ${on ? "on" : ""}" data-mode="${x}">${x.replace("_", " ")}</span>`;
+  }).join("");
+
+  // sinks - several can be on at once
+  const active = s.active || [s.sink];
+  $("#sinks").innerHTML = Object.entries(s.sinks).map(([n, ok]) => {
+    const on = active.includes(n);
+    const cls = on ? "chip on" : (ok ? "chip" : "chip off");
+    const label = {pc: "this pc", sony: "sony tv", lg: "lg tv",
+                   echo: "echo dot", web: "this device"}[n] || n;
+    const mark = on && !(s.syncable || {})[n] ? " &#9673;" : "";
+    return `<span class="${cls}" data-sink="${n}">${label}${mark}</span>`;
+  }).join("");
+
+  // how far apart the outputs are
+  const sync = s.sync || [];
+  if (sync.length > 1) {
+    $("#sync").innerHTML = sync.map(x => {
+      const label = {pc: "this pc", sony: "sony tv", lg: "lg tv",
+                     echo: "echo dot", web: "this device"}[x.sink] || x.sink;
+      if (x.primary) return `<span class="muted">${label}: reference</span>`;
+      if (!x.syncable) return `<span style="color:var(--warn)">${label}: cannot sync</span>`;
+      const d = Math.abs(x.drift);
+      const col = d < 0.5 ? "var(--good)" : (d < 1.5 ? "var(--dim)" : "var(--warn)");
+      return `<span style="color:${col}">${label}: ${x.drift > 0 ? "+" : ""}${x.drift.toFixed(1)}s</span>`;
+    }).join(" &nbsp;·&nbsp; ");
+  } else {
+    $("#sync").innerHTML = "";
+  }
+
+  // queue
+  $("#queue").innerHTML = (s.queue || []).map(t => `
+    <div class="q">
+      <img src="${t.thumbnail || ""}" alt="">
+      <div class="grow">
+        <div class="t">${esc(t.title)}</div>
+        <div class="a">${esc(t.artist || "")} &middot; ${esc(t.reason || "")}</div>
+      </div>
+      ${t.unheard ? '<span class="new">new</span>' : ""}
+    </div>`).join("") || '<div class="tiny muted">building the queue…</div>';
+
+  webSink = s.sink === "web";
+  syncAudio(s);
+}
+
+function esc(x) {
+  return String(x || "").replace(/[&<>"]/g, ch =>
+    ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch]));
+}
+
+// When this device is the speaker, drive the <audio> element from state.
+let seekEpoch = -1;
+function syncAudio(s) {
+  const a = $("#audio"), c = s.current;
+  if (!webSink || !c) { if (!a.paused) a.pause(); lastVid = null; return; }
+  if (c.video_id !== lastVid) {
+    lastVid = c.video_id;
+    a.src = "/stream/" + c.video_id;
+    a.play().catch(() => {});
+  }
+  if (s.paused && !a.paused) a.pause();
+  if (!s.paused && a.paused && a.src) a.play().catch(() => {});
+  // Join the group timeline when the server says to jump. Acting only on a
+  // change of epoch means a poll every second cannot fight you scrubbing.
+  fetch("/api/seek").then(r => r.json()).then(j => {
+    if (j.active && j.epoch !== seekEpoch) {
+      seekEpoch = j.epoch;
+      if (j.seek_to > 0.5 && Math.abs(a.currentTime - j.seek_to) > 1.0) {
+        try { a.currentTime = j.seek_to; } catch (e) {}
+      }
+    }
+  }).catch(() => {});
+}
+
+$("#audio").addEventListener("timeupdate", () => {
+  if (webSink) api("/api/report", {position: $("#audio").currentTime, ended: false});
+});
+$("#audio").addEventListener("ended", () => {
+  if (webSink) api("/api/report", {position: $("#audio").duration || 0, ended: true});
+});
+
+$("#btnPlay").onclick = async () => {
+  if (state && state.playing && !state.paused) await api("/api/pause", {});
+  else if (state && state.paused) await api("/api/resume", {});
+  else await api("/api/play", {});
+  poll();
+};
+$("#btnNext").onclick = async () => { await api("/api/next", {reason: "skipped"}); poll(); };
+$("#btnLater").onclick = async () => {
+  await api("/api/next", {reason: "not_now"});
+  flash("noted — not held against it");
+  poll();
+};
+$("#btnLove").onclick = async () => { await api("/api/feedback", {kind: "love"}); flash("noted"); };
+$("#btnDown").onclick = async () => { await api("/api/feedback", {kind: "dislike"}); poll(); };
+$("#btnBan").onclick = async () => { await api("/api/feedback", {kind: "ban"}); poll(); };
+
+$("#modes").onclick = async e => {
+  const el = e.target.closest("[data-mode]"); if (!el) return;
+  const m = el.dataset.mode;
+  await api("/api/mode", {mode: m === "auto" ? null : m});
+  poll();
+};
+$("#sinks").onclick = async e => {
+  const el = e.target.closest("[data-sink]"); if (!el || el.classList.contains("off")) return;
+  const n = el.dataset.sink;
+  let active = (state && state.active) ? state.active.slice() : [];
+  if (active.includes(n)) {
+    active = active.filter(x => x !== n);
+    if (!active.length) { flash("something has to play it"); return; }
+  } else {
+    active.push(n);
+  }
+  await api("/api/sink", {sinks: active});
+  poll();
+};
+$("#btnAll").onclick = async () => {
+  const all = Object.entries(state.sinks).filter(([, ok]) => ok).map(([n]) => n);
+  await api("/api/sink", {sinks: all});
+  poll();
+};
+$("#btnClearFocus").onclick = async () => {
+  await api("/api/focus", {clear: true});
+  flash("back to reading the room");
+  poll();
+};
+$("#btnAsk").onclick = ask;
+$("#ask").addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+async function ask() {
+  const t = $("#ask").value.trim(); if (!t) return;
+  $("#btnAsk").textContent = "…";
+  const r = await api("/api/request", {text: t});
+  $("#btnAsk").textContent = "Ask";
+  if (!r.ok) flash(r.message || "no luck"); else { $("#ask").value = ""; poll(); }
+}
+
+const biasNames = ["only what I know", "cautious", "normal", "curious", "surprise me"];
+$("#bias").oninput = e => {
+  $("#biasVal").textContent = biasNames[Math.round(e.target.value / 0.75)] || "normal";
+};
+$("#bias").onchange = e => api("/api/discovery", {bias: parseFloat(e.target.value)});
+$("#vol").oninput = e => { $("#volVal").textContent = e.target.value; };
+$("#vol").onchange = e => api("/api/volume", {level: parseInt(e.target.value)});
+
+function flash(msg) {
+  $("#err").textContent = msg;
+  setTimeout(() => { if ($("#err").textContent === msg) $("#err").textContent = ""; }, 3000);
+}
+
+async function poll() {
+  try { render(await api("/api/state")); }
+  catch (e) { $("#live").className = "dot"; }
+}
+
+async function loadRemote() {
+  try {
+    const t = await api("/api/tunnel");
+    if (!t.enabled || !t.link) { $("#remoteCard").hidden = true; return; }
+    $("#remoteCard").hidden = false;
+    $("#remoteUrl").value = t.link;
+    // Quick tunnels are handed a new address each time, so say so rather than
+    // letting a bookmarked one quietly stop working.
+    $("#remoteNote").textContent =
+      `changes when the tunnel restarts · up ${Math.floor(t.up_seconds/60)}m`
+      + (t.restarts ? ` · ${t.restarts} restarts` : "");
+  } catch (e) { $("#remoteCard").hidden = true; }
+}
+$("#btnCopy").onclick = () => {
+  const el = $("#remoteUrl");
+  el.select();
+  navigator.clipboard?.writeText(el.value).then(
+    () => flash("copied"), () => { document.execCommand("copy"); flash("copied"); });
+};
+
+async function loadInsights() {
+  try {
+    const d = await api("/api/insights");
+    $("#insights").innerHTML =
+      '<div class="tiny muted" style="margin:8px 0 4px">Most played</div>' +
+      d.top.slice(0, 8).map(t =>
+        `<div class="kv"><span>${esc(t.artist)} — ${esc(t.title)}</span><b>${t.n}×</b></div>`
+      ).join("") +
+      '<div class="tiny muted" style="margin:12px 0 4px">Clusters it hears</div>' +
+      d.vibes.slice(0, 8).map(v =>
+        `<div class="kv"><span>${esc(v.label || "vibe " + v.id)}</span><b>${v.size}</b></div>`
+      ).join("") +
+      '<div class="tiny muted" style="margin:12px 0 4px">Library</div>' +
+      Object.entries(d.stats).map(([k, v]) =>
+        `<div class="kv"><span>${k}</span><b>${v}</b></div>`).join("");
+  } catch (e) {}
+}
+
+document.querySelector("details").addEventListener("toggle", e => {
+  if (e.target.open) loadInsights();
+});
+
+poll();
+setInterval(poll, 1000);
+loadRemote();
+setInterval(loadRemote, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Everything the DJ knows about you: database, logs, auth files, cookies
+data/
+
+# Your settings (access token, device addresses)
+config.json
+*.bak*

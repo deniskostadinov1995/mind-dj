@@ -1,0 +1,274 @@
+# mind-dj <-> Home Assistant
+#
+# Drop this in as a package:  /config/packages/mind_dj.yaml
+# and make sure configuration.yaml has:
+#
+#   homeassistant:
+#     packages: !include_dir_named packages
+#
+# Then Developer Tools -> YAML -> Check configuration, and reload.
+#
+# The DJ publishes sensor.dj_now_playing, sensor.dj_moment,
+# binary_sensor.dj_playing and sensor.dj_library over the REST API on its own,
+# so nothing here is needed to *see* it. This file is only about driving it.
+#
+# >>> Replace 192.168.1.50 with the LAN IP of the PC running mind-dj (and 5055
+# >>> with server.port if you changed it). Give that PC a DHCP reservation. TOKEN below must match server.access_token in config.json.
+
+rest_command:
+  dj_play:
+    url: "http://192.168.1.50:5055/api/play"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: "{}"
+
+  dj_pause:
+    url: "http://192.168.1.50:5055/api/pause"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: "{}"
+
+  dj_resume:
+    url: "http://192.168.1.50:5055/api/resume"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: "{}"
+
+  dj_stop:
+    url: "http://192.168.1.50:5055/api/stop"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: "{}"
+
+  # reason: skipped (I do not want this) | not_now (good song, wrong moment)
+  dj_next:
+    url: "http://192.168.1.50:5055/api/next"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: '{"reason": "{{ reason | default(''skipped'') }}"}'
+
+  # Anything you could type into the app: "something calm for cooking".
+  dj_request:
+    url: "http://192.168.1.50:5055/api/request"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: '{"text": "{{ text }}"}'
+
+  # kind: love | like | dislike | ban | not_now
+  dj_feedback:
+    url: "http://192.168.1.50:5055/api/feedback"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: '{"kind": "{{ kind }}"}'
+
+  # One room: {"sink": "pc"}. Several, played in sync: {"sinks": ["pc","sony"]}.
+  dj_sink:
+    url: "http://192.168.1.50:5055/api/sink"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: '{"sink": "{{ sink }}"}'
+
+  dj_sinks:
+    url: "http://192.168.1.50:5055/api/sink"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: '{"sinks": {{ sinks | tojson }}}'
+
+  # mode: focus | wind_down | active | party | workout | sleep, or null for auto
+  dj_mode:
+    url: "http://192.168.1.50:5055/api/mode"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: '{"mode": {{ mode | tojson }}}'
+
+  dj_volume:
+    url: "http://192.168.1.50:5055/api/volume"
+    method: post
+    content_type: "application/json"
+    headers:
+      X-DJ-Key: !secret mind_dj_token
+    payload: '{"level": {{ level | int }}}'
+
+
+# --------------------------------------------------------------------------
+# Voice, through JARVIS.
+#
+# Exposed as intent_script tools rather than sentence triggers, because
+# sentence triggers do not fire reliably once a conversation agent is in front
+# of them -- the same pattern the rest of this setup already uses.
+# --------------------------------------------------------------------------
+intent_script:
+  DjPlayMusic:
+    description: >
+      Start the personal DJ. It chooses what to play by itself from the time,
+      who is home, what the rooms are doing and what the listener has kept at
+      moments like this. Use when asked for music without anything specific.
+    speech:
+      text: "Putting something on."
+    action:
+      - action: rest_command.dj_play
+
+  DjRequestMusic:
+    description: >
+      Ask the personal DJ for a particular kind of music. Pass whatever was
+      said, for example "something calmer", "upbeat for cleaning" or "play
+      Galena". Use whenever a mood, genre, artist or song is named.
+    speech:
+      text: "On it."
+    action:
+      - action: rest_command.dj_request
+        data:
+          text: "{{ query }}"
+
+  DjSkip:
+    description: Skip the current song because the listener does not want it.
+    speech:
+      text: "Skipping."
+    action:
+      - action: rest_command.dj_next
+        data:
+          reason: skipped
+
+  DjNotNow:
+    description: >
+      Move past the current song without holding it against it -- the listener
+      likes it but not at this moment. Use for "not now", "not this one",
+      "something else".
+    speech:
+      text: "Fine, something else."
+    action:
+      - action: rest_command.dj_next
+        data:
+          reason: not_now
+
+  DjStop:
+    description: Stop the personal DJ.
+    speech:
+      text: "Stopped."
+    action:
+      - action: rest_command.dj_stop
+
+  DjLove:
+    description: >
+      Record that the listener loves the current song, so more like it plays
+      at moments like this.
+    speech:
+      text: "Noted."
+    action:
+      - action: rest_command.dj_feedback
+        data:
+          kind: love
+
+  DjDislike:
+    description: Record that the listener dislikes the current song, and skip it.
+    speech:
+      text: "Won't play that again."
+    action:
+      - action: rest_command.dj_feedback
+        data:
+          kind: dislike
+
+  DjPlayHere:
+    description: >
+      Move the music to one speaker. room must be one of: pc, sony, lg, echo.
+    speech:
+      text: "Moving it."
+    action:
+      - action: rest_command.dj_sink
+        data:
+          sink: >
+            {% set m = {'pc': 'pc', 'computer': 'pc', 'sony': 'sony',
+                        'tv': 'sony', 'lg': 'lg', 'echo': 'echo',
+                        'kitchen': 'echo'} %}
+            {{ m.get(room | lower, 'pc') }}
+
+  DjPlayEverywhere:
+    description: >
+      Play on every speaker at once, kept in sync where the device allows it.
+    speech:
+      text: "Everywhere it is."
+    action:
+      - action: rest_command.dj_sinks
+        data:
+          sinks: ["pc", "sony", "lg", "echo"]
+
+  DjWhatIsPlaying:
+    description: Say what the personal DJ is playing right now, and why.
+    speech:
+      text: >
+        {% set s = states('sensor.dj_now_playing') %}
+        {% if s in ['idle', 'unknown', 'unavailable'] %}
+          Nothing is playing.
+        {% else %}
+          {{ s }}. {{ state_attr('sensor.dj_now_playing', 'reason') }}.
+        {% endif %}
+
+
+# --------------------------------------------------------------------------
+# Optional automations. All shipped disabled -- these are suggestions, not
+# something that should start running the moment you paste this in.
+# --------------------------------------------------------------------------
+automation:
+  - id: dj_follow_me_to_the_living_room
+    alias: "DJ - move music to the TV when I settle in the living room"
+    initial_state: false
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.presence_sensor_living_room_motion
+        to: "on"
+        for: "00:02:00"
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.dj_playing
+        state: "on"
+      - condition: template
+        value_template: "{{ state_attr('sensor.dj_now_playing', 'sink') == 'pc' }}"
+    actions:
+      - action: rest_command.dj_sink
+        data:
+          sink: sony
+
+  - id: dj_stop_when_i_leave
+    alias: "DJ - stop when nobody is home"
+    initial_state: false
+    triggers:
+      - trigger: state
+        entity_id: person.you
+        to: not_home
+        for: "00:05:00"
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.dj_playing
+        state: "on"
+    actions:
+      - action: rest_command.dj_stop
+
+  - id: dj_quiet_at_bedtime
+    alias: "DJ - stop when sleep mode turns on"
+    initial_state: false
+    triggers:
+      - trigger: state
+        entity_id: input_boolean.bedroom_sleep_mode
+        to: "on"
+    actions:
+      - action: rest_command.dj_stop

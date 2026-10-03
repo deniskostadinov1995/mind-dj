@@ -1,0 +1,13 @@
+flask>=3.0
+flask-socketio>=5.3
+gevent>=24.0
+gevent-websocket>=0.10.1
+requests>=2.31
+numpy>=1.26
+ytmusicapi>=1.7
+yt-dlp>=2025.1.1
+python-dateutil>=2.9
+truststore>=0.10
+simple-websocket>=1.0
+# Optional: AirPlay output (LG TVs and other AirPlay 2 receivers)
+pyatv>=0.14

@@ -1,0 +1,37 @@
+{
+  "server": {
+    "port": 5055,
+    "access_token": "",
+    "tunnel": false
+  },
+  "homeassistant": {
+    "url": "http://homeassistant.local:8123",
+    "enabled": true,
+    "context_entities": {
+      "person": "person.you",
+      "weather": "weather.forecast_home",
+      "sleep_mode": "input_boolean.bedroom_sleep_mode",
+      "living_room_motion": "binary_sensor.living_room_motion"
+    }
+  },
+  "ollama": {
+    "url": "http://localhost:11434",
+    "enabled": true
+  },
+  "sinks": {
+    "default": "pc",
+    "sony": {
+      "enabled": false,
+      "entity": "media_player.living_room_tv"
+    },
+    "lg": {
+      "enabled": false,
+      "entity": "media_player.lg_tv",
+      "host": "192.168.1.20"
+    },
+    "echo": {
+      "enabled": false,
+      "entity": "media_player.kitchen_echo"
+    }
+  }
+}
